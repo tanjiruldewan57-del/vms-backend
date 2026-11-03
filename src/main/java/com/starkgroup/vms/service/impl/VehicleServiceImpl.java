@@ -10,19 +10,23 @@ import com.starkgroup.vms.model.Vehicle;
 import com.starkgroup.vms.model.VehicleStatus;
 import com.starkgroup.vms.repository.VehicleRepository;
 import com.starkgroup.vms.service.VehicleService;
+import jakarta.persistence.criteria.Predicate;
 import lombok.RequiredArgsConstructor;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.Pageable;
+import org.springframework.data.jpa.domain.Specification;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
+import java.util.ArrayList;
+import java.util.List;
 import java.util.Locale;
 
 /**
  * Service implementation managing vehicle domain logic.
- * Encapsulates all business rules such as vehicle number uniqueness enforcement.
+ * Encapsulates all business rules such as vehicle number uniqueness enforcement across create and update.
  */
 @Service
 @RequiredArgsConstructor
@@ -40,7 +44,7 @@ public class VehicleServiceImpl implements VehicleService {
 
         // Business Rule: Vehicle Number must be globally unique
         if (vehicleRepository.existsByVehicleNumberIgnoreCase(sanitizedVehicleNumber)) {
-            log.warn("Attempt to register existing vehicle number: {}", sanitizedVehicleNumber);
+            log.warn("Attempted duplicate registration for vehicle number: {}", sanitizedVehicleNumber);
             throw new DuplicateVehicleNumberException(sanitizedVehicleNumber);
         }
 
@@ -76,8 +80,9 @@ public class VehicleServiceImpl implements VehicleService {
     }
 
     @Override
-    public PageResponse<VehicleResponse> getAllVehicles(Pageable pageable) {
-        Page<Vehicle> page = vehicleRepository.findAll(pageable);
+    public PageResponse<VehicleResponse> getVehicles(String company, VehicleStatus status, String search, Pageable pageable) {
+        Specification<Vehicle> spec = createVehicleSpecification(company, status, search);
+        Page<Vehicle> page = vehicleRepository.findAll(spec, pageable);
         return PageResponse.from(page.map(VehicleResponse::fromEntity));
     }
 
@@ -87,6 +92,15 @@ public class VehicleServiceImpl implements VehicleService {
         Vehicle vehicle = vehicleRepository.findById(id)
                 .orElseThrow(() -> new ResourceNotFoundException("Vehicle", "id", id));
 
+        String sanitizedVehicleNumber = sanitizeVehicleNumber(request.getVehicleNumber());
+
+        // Business Rule: Updated vehicle number must not conflict with any other vehicle
+        if (vehicleRepository.existsByVehicleNumberIgnoreCaseAndIdNot(sanitizedVehicleNumber, id)) {
+            log.warn("Attempted duplicate vehicle number update: {} on ID={}", sanitizedVehicleNumber, id);
+            throw new DuplicateVehicleNumberException(sanitizedVehicleNumber);
+        }
+
+        vehicle.setVehicleNumber(sanitizedVehicleNumber);
         vehicle.setCompany(request.getCompany().trim());
         vehicle.setType(request.getType().trim());
         vehicle.setBrand(request.getBrand().trim());
@@ -113,5 +127,31 @@ public class VehicleServiceImpl implements VehicleService {
             return "";
         }
         return vehicleNumber.trim().toUpperCase(Locale.ROOT);
+    }
+
+    private Specification<Vehicle> createVehicleSpecification(String company, VehicleStatus status, String search) {
+        return (root, query, cb) -> {
+            List<Predicate> predicates = new ArrayList<>();
+
+            if (company != null && !company.isBlank()) {
+                predicates.add(cb.equal(cb.lower(root.get("company")), company.trim().toLowerCase(Locale.ROOT)));
+            }
+
+            if (status != null) {
+                predicates.add(cb.equal(root.get("status"), status));
+            }
+
+            if (search != null && !search.isBlank()) {
+                String pattern = "%" + search.trim().toLowerCase(Locale.ROOT) + "%";
+                Predicate numMatch = cb.like(cb.lower(root.get("vehicleNumber")), pattern);
+                Predicate compMatch = cb.like(cb.lower(root.get("company")), pattern);
+                Predicate brandMatch = cb.like(cb.lower(root.get("brand")), pattern);
+                Predicate modelMatch = cb.like(cb.lower(root.get("model")), pattern);
+                Predicate typeMatch = cb.like(cb.lower(root.get("type")), pattern);
+                predicates.add(cb.or(numMatch, compMatch, brandMatch, modelMatch, typeMatch));
+            }
+
+            return cb.and(predicates.toArray(new Predicate[0]));
+        };
     }
 }

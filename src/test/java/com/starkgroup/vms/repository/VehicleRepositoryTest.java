@@ -58,4 +58,16 @@ class VehicleRepositoryTest {
         assertThat(found.get().getCreatedAt()).isNotNull();
         assertThat(found.get().getUpdatedAt()).isNotNull();
     }
+
+    @Test
+    @DisplayName("existsByVehicleNumberIgnoreCaseAndIdNot: Should return true if another entity possesses the vehicle number")
+    void testExistsByVehicleNumberIgnoreCaseAndIdNot() {
+        Vehicle saved = vehicleRepository.findByVehicleNumberIgnoreCase("VMS-001").orElseThrow();
+
+        // Same ID and same number -> should return false (not conflicting with another entity)
+        assertThat(vehicleRepository.existsByVehicleNumberIgnoreCaseAndIdNot("VMS-001", saved.getId())).isFalse();
+
+        // Different ID and same number -> should return true (conflicts with another entity)
+        assertThat(vehicleRepository.existsByVehicleNumberIgnoreCaseAndIdNot("VMS-001", 99999L)).isTrue();
+    }
 }

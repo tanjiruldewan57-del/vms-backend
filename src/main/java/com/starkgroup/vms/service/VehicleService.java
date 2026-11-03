@@ -4,6 +4,7 @@ import com.starkgroup.vms.common.api.PageResponse;
 import com.starkgroup.vms.dto.request.VehicleCreateRequest;
 import com.starkgroup.vms.dto.request.VehicleUpdateRequest;
 import com.starkgroup.vms.dto.response.VehicleResponse;
+import com.starkgroup.vms.model.VehicleStatus;
 import org.springframework.data.domain.Pageable;
 
 /**
@@ -17,7 +18,7 @@ public interface VehicleService {
 
     VehicleResponse getVehicleByNumber(String vehicleNumber);
 
-    PageResponse<VehicleResponse> getAllVehicles(Pageable pageable);
+    PageResponse<VehicleResponse> getVehicles(String company, VehicleStatus status, String search, Pageable pageable);
 
     VehicleResponse updateVehicle(Long id, VehicleUpdateRequest request);
 

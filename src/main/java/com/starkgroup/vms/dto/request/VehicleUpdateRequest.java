@@ -10,13 +10,17 @@ import lombok.Data;
 import lombok.NoArgsConstructor;
 
 /**
- * Payload for updating vehicle details.
+ * Payload for updating vehicle specifications and operational details.
  */
 @Data
 @Builder
 @NoArgsConstructor
 @AllArgsConstructor
 public class VehicleUpdateRequest {
+
+    @NotBlank(message = "Vehicle number is required")
+    @Size(min = 2, max = 50, message = "Vehicle number must be between 2 and 50 characters")
+    private String vehicleNumber;
 
     @NotBlank(message = "Company is required")
     @Size(max = 100, message = "Company cannot exceed 100 characters")

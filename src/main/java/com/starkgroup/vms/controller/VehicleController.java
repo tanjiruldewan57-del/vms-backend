@@ -5,6 +5,7 @@ import com.starkgroup.vms.common.api.PageResponse;
 import com.starkgroup.vms.dto.request.VehicleCreateRequest;
 import com.starkgroup.vms.dto.request.VehicleUpdateRequest;
 import com.starkgroup.vms.dto.response.VehicleResponse;
+import com.starkgroup.vms.model.VehicleStatus;
 import com.starkgroup.vms.service.VehicleService;
 import jakarta.validation.Valid;
 import lombok.RequiredArgsConstructor;
@@ -20,6 +21,7 @@ import org.springframework.web.bind.annotation.PostMapping;
 import org.springframework.web.bind.annotation.PutMapping;
 import org.springframework.web.bind.annotation.RequestBody;
 import org.springframework.web.bind.annotation.RequestMapping;
+import org.springframework.web.bind.annotation.RequestParam;
 import org.springframework.web.bind.annotation.RestController;
 import org.springframework.web.servlet.support.ServletUriComponentsBuilder;
 
@@ -27,6 +29,7 @@ import java.net.URI;
 
 /**
  * REST Controller exposing Vehicle Management endpoints under /api/v1/vehicles.
+ * Strictly communicates via request/response DTOs, Bean Validation, and RFC 9110 status codes.
  */
 @RestController
 @RequestMapping("/api/v1/vehicles")
@@ -46,13 +49,16 @@ public class VehicleController {
                 .toUri();
 
         return ResponseEntity.created(location)
-                .body(ApiResponse.success(response, "Vehicle successfully registered in fleet"));
+                .body(ApiResponse.success(response, "Vehicle successfully created"));
     }
 
     @GetMapping
-    public ResponseEntity<ApiResponse<PageResponse<VehicleResponse>>> getAllVehicles(
+    public ResponseEntity<ApiResponse<PageResponse<VehicleResponse>>> getVehicles(
+            @RequestParam(required = false) String company,
+            @RequestParam(required = false) VehicleStatus status,
+            @RequestParam(required = false) String search,
             @PageableDefault(size = 20, sort = "id", direction = Sort.Direction.DESC) Pageable pageable) {
-        PageResponse<VehicleResponse> vehicles = vehicleService.getAllVehicles(pageable);
+        PageResponse<VehicleResponse> vehicles = vehicleService.getVehicles(company, status, search, pageable);
         return ResponseEntity.ok(ApiResponse.success(vehicles, "Vehicles retrieved successfully"));
     }
 
