@@ -2,6 +2,7 @@
 
 **Service:** `vms-backend`  
 **Technology Stack:** Java 21 (LTS) & Spring Boot 3.3.5  
+**Security:** Spring Security 6, Stateless JWT (RFC 7519), BCrypt  
 **Data Access:** Spring Data JPA & HikariCP  
 **Database Drivers:** PostgreSQL, MySQL, H2 (Local / Test Fallback)  
 
@@ -11,7 +12,7 @@
 
 ```
 vms-backend/
-├── pom.xml                                    # Dependencies (Spring Web, JPA, PostgreSQL, MySQL, H2)
+├── pom.xml                                    # Dependencies (Spring Web, Security, JJWT, JPA, DB Drivers)
 ├── .env.example                               # Zero-secret environment template
 ├── .editorconfig                              # Workspace formatting rules
 ├── .gitignore                                 # Git ignore (excludes .env, credentials, bytecode)
@@ -21,96 +22,120 @@ vms-backend/
 │   │   ├── java/com/starkgroup/vms/
 │   │   │   ├── VmsBackendApplication.java     # Application entrypoint
 │   │   │   ├── config/
-│   │   │   │   ├── SecurityConfig.java        # Security filter chain & permit endpoints
+│   │   │   │   ├── SecurityConfig.java        # Security filter chain, endpoints & CORS
+│   │   │   │   ├── PasswordEncoderConfig.java # BCryptPasswordEncoder
 │   │   │   │   ├── CorsProperties.java        # CORS properties binding
-│   │   │   │   └── JpaAuditingConfig.java     # Auditing configuration
+│   │   │   │   ├── JwtProperties.java         # JWT token properties (secret, expiration)
+│   │   │   │   └── JpaAuditingConfig.java     # JPA auditing configuration
+│   │   │   ├── security/
+│   │   │   │   ├── JwtTokenProvider.java      # Token generation, decoding & validation
+│   │   │   │   ├── JwtAuthenticationFilter.java# Bearer token validation filter
+│   │   │   │   ├── JwtAuthenticationEntryPoint.java # 401 Unauthorized JSON handler
+│   │   │   │   ├── VmsUserPrincipal.java      # UserDetails implementation
+│   │   │   │   └── CustomUserDetailsService.java # Preconfigured admin credentials
 │   │   │   ├── controller/
-│   │   │   │   └── HealthController.java      # Database connectivity health probe (/api/v1/health)
+│   │   │   │   ├── AuthController.java        # POST /api/v1/auth/login
+│   │   │   │   ├── VehicleController.java     # Protected /api/v1/vehicles CRUD endpoints
+│   │   │   │   └── HealthController.java      # Database connectivity health probe
 │   │   │   ├── dto/
-│   │   │   │   └── HealthResponse.java        # Health response DTO
+│   │   │   │   ├── auth/                      # LoginRequest, AuthResponse, AuthUserSummary
+│   │   │   │   ├── request/                   # VehicleCreateRequest, VehicleUpdateRequest
+│   │   │   │   └── response/                  # VehicleResponse, HealthResponse
+│   │   │   ├── service/
+│   │   │   │   ├── AuthService.java           # Authentication service
+│   │   │   │   └── VehicleService.java        # Vehicle domain service
+│   │   │   ├── repository/
+│   │   │   │   └── VehicleRepository.java     # Spring Data JPA repository
 │   │   │   └── common/
-│   │   │       ├── api/                       # ApiResponse, ErrorResponse
+│   │   │       ├── api/                       # ApiResponse, PageResponse, ErrorResponse
 │   │   │       └── exception/                 # GlobalExceptionHandler, Custom exceptions
 │   │   └── resources/
-│   │       ├── application.yml                # Base configuration (Env-driven DB & HikariCP)
-│   │       ├── application-local.yml          # Local profile (H2 fallback or local PostgreSQL)
+│   │       ├── application.yml                # Base configuration (Env-driven DB & JWT)
+│   │       ├── application-local.yml          # Local profile (H2 fallback / local PostgreSQL)
 │   │       └── application-prod.yml           # Production profile (PostgreSQL / MySQL)
 │   └── test/
 │       └── java/com/starkgroup/vms/
 │           ├── VmsBackendApplicationTests.java# Context loads test
-│           ├── config/
-│           │   └── DatabaseConnectivityTest.java # Live DataSource connection & metadata verification
-│           └── controller/
-│               └── HealthControllerTest.java  # Health API & Actuator probe test
+│           ├── controller/
+│           │   ├── AuthControllerTest.java    # Authentication unit test
+│           │   └── VehicleControllerTest.java # Vehicle CRUD mock test
+│           ├── security/
+│           │   └── VehicleSecurityIntegrationTest.java # Protected endpoint & CORS integration test
+│           ├── service/
+│           │   └── VehicleServiceTest.java    # Domain business rules unit test
+│           └── repository/
+│               └── VehicleRepositoryTest.java # JPA persistence & uniqueness test
 ```
 
 ---
 
-## 🔌 SQL Database Configuration
+## 🔒 Authentication & Default Credentials
 
-Credentials and connection strings are managed **strictly via environment variables** and are kept out of source control.
+The backend authenticates requests statelessly via **JWT Bearer Tokens**.
 
-### Supported SQL Databases
-- **PostgreSQL** (Driver: `org.postgresql.Driver`)
-- **MySQL** (Driver: `com.mysql.cj.jdbc.Driver`)
-- **H2** (In-memory development fallback)
+### Default Admin Credentials
+* **Email:** `admin@starkgroup.com`
+* **Password:** `Password123!`
+* **Role:** `ADMIN`
+* **Name:** `Fleet Admin`
 
-### Environment Variables
-Configure these variables in your environment or a local `.env` file (copied from `.env.example`):
-
-| Variable | Description | Default (Local Profile) |
-| :--- | :--- | :--- |
-| `DB_URL` | JDBC Connection URL | `jdbc:h2:mem:vms_db;DB_CLOSE_DELAY=-1;DB_CLOSE_ON_EXIT=FALSE` |
-| `DB_USERNAME` | Database username | `sa` |
-| `DB_PASSWORD` | Database password | *(empty)* |
-| `DB_DRIVER` | JDBC Driver class (optional) | Auto-detected from URL |
-| `DB_POOL_MAX_SIZE` | Maximum HikariCP pool size | `10` |
-| `DB_POOL_MIN_IDLE` | Minimum idle connections | `2` |
-| `JPA_DDL_AUTO` | Hibernate schema management | `update` (local) / `validate` (prod) |
-| `JPA_SHOW_SQL` | Log SQL queries | `true` (local) / `false` (prod) |
+### Authentication Flow
+1. **Login:** Send credentials to `POST /api/v1/auth/login`.
+2. **Bearer Token:** The response returns a signed JWT.
+3. **Protected Access:** Include the header `Authorization: Bearer <token>` in requests to `/api/v1/vehicles/**`.
 
 ---
 
-## 🚀 Running the Project & Verifying Connectivity
+## 🚀 Running the Project & Verifying Endpoints
 
-### 1. Build and Run Automated Tests
+### 1. Execute Test Suite
 ```bash
-# Execute unit and database connectivity tests
 mvn clean test
 ```
 
 ### 2. Start Application Locally
 ```bash
-# Start with default local profile (H2 in-memory)
 mvn spring-boot:run -Dspring-boot.run.profiles=local
-
-# Or start pointing to your external PostgreSQL/MySQL database
-DB_URL="jdbc:postgresql://127.0.0.1:5432/vms_db" \
-DB_USERNAME="vms_user" \
-DB_PASSWORD="your_password" \
-mvn spring-boot:run
 ```
 
-### 3. Verify Health Check Endpoints
-Once the application starts, ping the health endpoints:
+### 3. Quick cURL Test
 
+#### A. Login and Obtain Token
 ```bash
-# Custom SQL Database Health Probe
-curl -s http://127.0.0.1:8080/api/v1/health
+curl -X POST http://127.0.0.1:8080/api/v1/auth/login \
+  -H "Content-Type: application/json" \
+  -d '{
+    "email": "admin@starkgroup.com",
+    "password": "Password123!"
+  }'
+```
 
-# Output:
-# {
-#   "success": true,
-#   "message": "System and database are healthy",
-#   "data": {
-#     "status": "UP",
-#     "database": "CONNECTED",
-#     "databaseProductName": "PostgreSQL",
-#     "databaseProductVersion": "16.1",
-#     "timestamp": "..."
-#   }
-# }
+*Response:*
+```json
+{
+  "success": true,
+  "message": "Authentication successful",
+  "data": {
+    "token": "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9...",
+    "user": {
+      "email": "admin@starkgroup.com",
+      "name": "Fleet Admin",
+      "role": "ADMIN"
+    }
+  },
+  "timestamp": "2026-11-04T04:45:00Z"
+}
+```
 
-# Spring Boot Actuator Health Probe
-curl -s http://127.0.0.1:8080/actuator/health
+#### B. Access Protected Endpoint Without Token (Expected: 401 Unauthorized)
+```bash
+curl -i -X GET http://127.0.0.1:8080/api/v1/vehicles
+```
+
+#### C. Access Protected Endpoint With Token (Expected: 200 OK)
+```bash
+TOKEN="<jwt_from_login_above>"
+
+curl -X GET http://127.0.0.1:8080/api/v1/vehicles \
+  -H "Authorization: Bearer $TOKEN"
 ```
