@@ -1,26 +1,24 @@
 # ==============================================================================
-# VMS Backend - Production Profile (Hardened, Zero Console, PostgreSQL)
+# VMS Backend - Production Profile
+# Strictly requires environment-based SQL database credentials
 # ==============================================================================
 spring:
   datasource:
-    url: ${SPRING_DATASOURCE_URL}
-    username: ${SPRING_DATASOURCE_USERNAME}
-    password: ${SPRING_DATASOURCE_PASSWORD}
-    driver-class-name: org.postgresql.Driver
+    url: ${DB_URL}
+    username: ${DB_USERNAME}
+    password: ${DB_PASSWORD}
     hikari:
-      maximum-pool-size: 20
-      minimum-idle: 5
+      maximum-pool-size: ${DB_POOL_MAX_SIZE:20}
+      minimum-idle: ${DB_POOL_MIN_IDLE:5}
       idle-timeout: 300000
       max-lifetime: 1200000
       connection-timeout: 20000
   jpa:
-    database-platform: org.hibernate.dialect.PostgreSQLDialect
     hibernate:
-      ddl-auto: validate
+      ddl-auto: ${JPA_DDL_AUTO:validate}
     show-sql: false
 
 logging:
   level:
     root: WARN
     com.starkgroup.vms: INFO
-

@@ -1,17 +1,16 @@
 # ==============================================================================
 # VMS Backend - Local Development Profile
-# Uses H2 in-memory or local PostgreSQL with debug diagnostics enabled safely
+# Connects to configured SQL database via DB_URL or falls back to local H2
 # ==============================================================================
 spring:
   datasource:
-    url: ${SPRING_DATASOURCE_URL:jdbc:h2:mem:vms_db;DB_CLOSE_DELAY=-1;DB_CLOSE_ON_EXIT=FALSE}
-    driver-class-name: ${SPRING_DATASOURCE_DRIVER:org.h2.Driver}
-    username: ${SPRING_DATASOURCE_USERNAME:sa}
-    password: ${SPRING_DATASOURCE_PASSWORD:}
+    url: ${DB_URL:${SPRING_DATASOURCE_URL:jdbc:h2:mem:vms_db;DB_CLOSE_DELAY=-1;DB_CLOSE_ON_EXIT=FALSE}}
+    username: ${DB_USERNAME:${SPRING_DATASOURCE_USERNAME:sa}}
+    password: ${DB_PASSWORD:${SPRING_DATASOURCE_PASSWORD:}}
+    driver-class-name: ${DB_DRIVER:${SPRING_DATASOURCE_DRIVER:}}
   jpa:
-    database-platform: org.hibernate.dialect.H2Dialect
     hibernate:
-      ddl-auto: update
+      ddl-auto: ${JPA_DDL_AUTO:update}
     show-sql: true
     properties:
       hibernate:
@@ -27,5 +26,4 @@ logging:
   level:
     root: INFO
     com.starkgroup.vms: DEBUG
-    org.springframework.security: INFO
-
+    org.springframework.jdbc: DEBUG

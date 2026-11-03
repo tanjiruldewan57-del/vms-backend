@@ -1,15 +1,5 @@
 package com.starkgroup.vms.model;
 
-/**
- * Classification category of the vehicle.
+/*
+ * Reserved for vehicle category enumeration.
  */
-public enum VehicleType {
-    SEDAN,
-    SUV,
-    TRUCK,
-    VAN,
-    BUS,
-    ELECTRIC,
-    MOTORCYCLE
-}
-
