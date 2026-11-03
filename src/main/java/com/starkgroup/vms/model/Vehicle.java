@@ -1,6 +1,61 @@
 package com.starkgroup.vms.model;
 
-/*
- * Domain entities reserved for future application features.
- * No vehicle fields or tables are created at this foundation stage.
+import jakarta.persistence.Column;
+import jakarta.persistence.Entity;
+import jakarta.persistence.EnumType;
+import jakarta.persistence.Enumerated;
+import jakarta.persistence.GeneratedValue;
+import jakarta.persistence.GenerationType;
+import jakarta.persistence.Id;
+import jakarta.persistence.Index;
+import jakarta.persistence.Table;
+import lombok.AllArgsConstructor;
+import lombok.Builder;
+import lombok.Getter;
+import lombok.NoArgsConstructor;
+import lombok.Setter;
+
+/**
+ * Vehicle Entity representing fleet assets.
+ * Contains: generated primary key, vehicleNumber (unique), company, type, brand, model, and status.
  */
+@Entity
+@Table(
+    name = "vehicles",
+    indexes = {
+        @Index(name = "idx_vehicles_vehicle_number", columnList = "vehicle_number", unique = true),
+        @Index(name = "idx_vehicles_company", columnList = "company"),
+        @Index(name = "idx_vehicles_status", columnList = "status")
+    }
+)
+@Getter
+@Setter
+@Builder
+@NoArgsConstructor
+@AllArgsConstructor
+public class Vehicle extends BaseAuditEntity {
+
+    @Id
+    @GeneratedValue(strategy = GenerationType.IDENTITY)
+    @Column(name = "id", updatable = false, nullable = false)
+    private Long id;
+
+    @Column(name = "vehicle_number", nullable = false, unique = true, length = 50)
+    private String vehicleNumber;
+
+    @Column(name = "company", nullable = false, length = 100)
+    private String company;
+
+    @Column(name = "type", nullable = false, length = 50)
+    private String type;
+
+    @Column(name = "brand", nullable = false, length = 50)
+    private String brand;
+
+    @Column(name = "model", nullable = false, length = 50)
+    private String model;
+
+    @Enumerated(EnumType.STRING)
+    @Column(name = "status", nullable = false, length = 30)
+    private VehicleStatus status;
+}

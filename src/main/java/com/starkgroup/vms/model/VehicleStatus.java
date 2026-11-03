@@ -1,5 +1,11 @@
 package com.starkgroup.vms.model;
 
-/*
- * Reserved for vehicle status enumeration.
+/**
+ * Operational lifecycle statuses for fleet vehicles.
  */
+public enum VehicleStatus {
+    AVAILABLE,
+    IN_USE,
+    UNDER_MAINTENANCE,
+    DECOMMISSIONED
+}
