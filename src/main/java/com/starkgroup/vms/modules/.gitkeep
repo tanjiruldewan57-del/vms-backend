@@ -1,0 +1,3 @@
+# Domain modules (Clean Architecture): vehicle, driver, telemetry, maintenance, dispatch.
+# Reserved for application feature implementations.
+

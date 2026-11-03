@@ -1,0 +1,66 @@
+# ==============================================================================
+# VMS Backend - Base Configuration (RFC 9110 / OWASP Hardened)
+# ==============================================================================
+spring:
+  application:
+    name: vms-backend
+  profiles:
+    active: ${SPRING_PROFILES_ACTIVE:local}
+  jpa:
+    open-in-view: false
+    show-sql: false
+    properties:
+      hibernate:
+        format_sql: false
+
+server:
+  port: ${SERVER_PORT:8080}
+  address: 127.0.0.1
+  error:
+    include-message: never
+    include-binding-errors: never
+    include-stacktrace: never
+    include-exception: false
+
+# Management & Health Actuator Configuration
+management:
+  endpoints:
+    web:
+      base-path: /actuator
+      exposure:
+        include: health,info,metrics
+  endpoint:
+    health:
+      show-details: when-authorized
+      probes:
+        enabled: true
+
+# Security & CORS Constraints (Whitelisting 127.0.0.1 Flutter Web dev instances)
+vms:
+  security:
+    jwt:
+      secret-key: ${JWT_SECRET_KEY:REDACTED_DEV_BASE64_KEY_MUST_BE_256_BITS_MINIMUM_REPLACE_IN_PROD}
+      expiration-minutes: ${JWT_EXPIRATION_MINUTES:60}
+      refresh-expiration-days: ${JWT_REFRESH_EXPIRATION_DAYS:7}
+    cors:
+      allowed-origins:
+        - "http://127.0.0.1:3000"
+        - "http://localhost:3000"
+        - "http://127.0.0.1:8000"
+        - "http://localhost:8000"
+      allowed-methods:
+        - GET
+        - POST
+        - PUT
+        - PATCH
+        - DELETE
+        - OPTIONS
+      allowed-headers:
+        - Authorization
+        - Content-Type
+        - X-Requested-With
+        - Accept
+        - Origin
+      allow-credentials: true
+      max-age: 3600
+
