@@ -3,7 +3,7 @@ package com.starkgroup.vms.common.exception;
 /**
  * Thrown when attempting to register or update a vehicle with an already existing vehicle number.
  */
-public class DuplicateVehicleNumberException extends RuntimeException {
+public class DuplicateVehicleNumberException extends DuplicateResourceException {
 
     private final String vehicleNumber;
 
