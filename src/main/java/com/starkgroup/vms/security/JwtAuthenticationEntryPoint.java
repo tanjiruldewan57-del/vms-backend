@@ -9,7 +9,6 @@ import org.springframework.http.HttpStatus;
 import org.springframework.http.MediaType;
 import org.springframework.security.core.AuthenticationException;
 import org.springframework.security.web.AuthenticationEntryPoint;
-import org.springframework.stereotype.Component;
 
 import java.io.IOException;
 import java.time.Instant;
@@ -17,8 +16,8 @@ import java.time.Instant;
 /**
  * AuthenticationEntryPoint returning standardized JSON error payloads when an unauthenticated
  * request attempts to access protected endpoints.
+ * Managed as a Spring Bean within {@link com.starkgroup.vms.config.SecurityConfig}.
  */
-@Component
 @RequiredArgsConstructor
 public class JwtAuthenticationEntryPoint implements AuthenticationEntryPoint {
 

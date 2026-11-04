@@ -2,19 +2,27 @@ package com.starkgroup.vms.controller;
 
 import com.fasterxml.jackson.databind.ObjectMapper;
 import com.starkgroup.vms.common.exception.GlobalExceptionHandler;
+import com.starkgroup.vms.config.SecurityConfig;
 import com.starkgroup.vms.dto.auth.AuthResponse;
 import com.starkgroup.vms.dto.auth.AuthUserSummary;
 import com.starkgroup.vms.dto.auth.LoginRequest;
+import com.starkgroup.vms.security.JwtAuthenticationFilter;
+import com.starkgroup.vms.security.JwtTokenProvider;
 import com.starkgroup.vms.service.AuthService;
 import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Test;
 import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.boot.autoconfigure.security.servlet.SecurityAutoConfiguration;
+import org.springframework.boot.autoconfigure.security.servlet.SecurityFilterAutoConfiguration;
 import org.springframework.boot.test.autoconfigure.web.servlet.AutoConfigureMockMvc;
 import org.springframework.boot.test.autoconfigure.web.servlet.WebMvcTest;
 import org.springframework.boot.test.mock.mockito.MockBean;
+import org.springframework.context.annotation.ComponentScan;
+import org.springframework.context.annotation.FilterType;
 import org.springframework.context.annotation.Import;
 import org.springframework.http.MediaType;
 import org.springframework.security.authentication.BadCredentialsException;
+import org.springframework.security.core.userdetails.UserDetailsService;
 import org.springframework.test.web.servlet.MockMvc;
 
 import static org.mockito.ArgumentMatchers.any;
@@ -23,7 +31,17 @@ import static org.springframework.test.web.servlet.request.MockMvcRequestBuilder
 import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.jsonPath;
 import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.status;
 
-@WebMvcTest(AuthController.class)
+@WebMvcTest(
+        controllers = AuthController.class,
+        excludeAutoConfiguration = {
+                SecurityAutoConfiguration.class,
+                SecurityFilterAutoConfiguration.class
+        },
+        excludeFilters = @ComponentScan.Filter(
+                type = FilterType.ASSIGNABLE_TYPE,
+                classes = {SecurityConfig.class, JwtAuthenticationFilter.class}
+        )
+)
 @AutoConfigureMockMvc(addFilters = false)
 @Import({GlobalExceptionHandler.class})
 class AuthControllerTest {
@@ -36,6 +54,12 @@ class AuthControllerTest {
 
     @MockBean
     private AuthService authService;
+
+    @MockBean
+    private JwtTokenProvider jwtTokenProvider;
+
+    @MockBean
+    private UserDetailsService userDetailsService;
 
     @Test
     @DisplayName("POST /api/v1/auth/login - Should return 200 OK with token and user profile on valid credentials")
