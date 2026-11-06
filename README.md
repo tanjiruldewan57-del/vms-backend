@@ -144,10 +144,27 @@ curl -X GET http://127.0.0.1:8080/api/v1/vehicles \
 
 ## ☁️ Render Cloud Deployment
 
-The VMS backend is prepared for direct deployment on [Render](https://render.com) as a Web Service.
+The VMS backend is prepared for direct deployment on [Render](https://render.com) as either a **Docker** container or a native **Java** Web Service.
 
-### Deployment Settings
-* **Runtime:** `Java` (Java 21 via `system.properties`)
+### Option A: Docker Container Deployment (Recommended)
+Render automatically detects the root [`Dockerfile`](file:///c:/Users/tanji/OneDrive/Documents/Github/vms-backend/Dockerfile) and builds a hardened, multi-stage Alpine image:
+* **Environment:** `Docker`
+* **Health Check Path:** `/actuator/health`
+
+#### Local Docker Verification
+```bash
+# 1. Build image using multi-stage build
+docker build -t vms-backend .
+
+# 2. Run container locally with in-memory H2 database
+docker run --rm -p 8080:8080 -e SPRING_PROFILES_ACTIVE=local vms-backend
+
+# 3. Probe Actuator health check
+curl http://localhost:8080/actuator/health
+```
+
+### Option B: Native Java Deployment
+* **Runtime:** `Java` (Java 21 via [`system.properties`](file:///c:/Users/tanji/OneDrive/Documents/Github/vms-backend/system.properties))
 * **Build Command:** `mvn clean package -DskipTests`
 * **Start Command:** `java -jar target/vms-backend-0.0.1-SNAPSHOT.jar`
 * **Health Check Path:** `/actuator/health` (publicly accessible without authentication)

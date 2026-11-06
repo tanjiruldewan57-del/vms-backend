@@ -1,0 +1,47 @@
+# ==============================================================================
+# .dockerignore - Docker build context exclusions
+# ==============================================================================
+
+# Git & Version Control
+.git/
+.gitignore
+.gitattributes
+
+# Build outputs & binaries
+target/
+*.class
+*.jar
+*.war
+
+# Environment & Sensitive Credentials
+.env
+.env.*
+!.env.example
+*.pem
+*.key
+*.p12
+
+# IDEs & Developer Tooling
+.idea/
+*.iml
+.vscode/
+.settings/
+.project
+.classpath
+
+# Logs & Temporary Files
+*.log
+logs/
+tmp/
+temp/
+.temp/
+*.swp
+*.swo
+*~
+.DS_Store
+Thumbs.db
+
+# Documentation & Metadata
+README.md
+render.yaml
+.dockerignore
