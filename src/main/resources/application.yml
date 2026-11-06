@@ -23,7 +23,7 @@ spring:
       max-lifetime: ${DB_MAX_LIFETIME_MS:1800000}
       auto-commit: true
 
-  # Spring Data JPA Foundation (No entities or tables invented yet)
+  # Spring Data JPA Foundation
   jpa:
     open-in-view: false
     hibernate:
@@ -34,15 +34,15 @@ spring:
         format_sql: false
 
 server:
-  port: ${SERVER_PORT:8080}
-  address: 127.0.0.1
+  port: ${PORT:8080}
+  address: ${SERVER_ADDRESS:0.0.0.0}
   error:
     include-message: never
     include-binding-errors: never
     include-stacktrace: never
     include-exception: false
 
-# Actuator Health Check Configuration
+# Actuator Health Check Configuration (Publicly accessible for Render health checks)
 management:
   endpoints:
     web:
@@ -58,15 +58,11 @@ management:
     db:
       enabled: true
 
-# Security & CORS Constraints (Whitelisting 127.0.0.1 Flutter Web dev instances)
+# Security & CORS Constraints (Whitelisting local development and deployed Netlify Flutter Web app)
 vms:
   security:
     cors:
-      allowed-origins:
-        - "http://127.0.0.1:3000"
-        - "http://localhost:3000"
-        - "http://127.0.0.1:8000"
-        - "http://localhost:8000"
+      allowed-origins: "${CORS_ALLOWED_ORIGINS:http://127.0.0.1:3000,http://localhost:3000,http://127.0.0.1:8000,http://localhost:8000,https://bespoke-mochi-006b8f.netlify.app}"
       allowed-methods:
         - GET
         - POST

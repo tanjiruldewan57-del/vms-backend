@@ -139,3 +139,29 @@ TOKEN="<jwt_from_login_above>"
 curl -X GET http://127.0.0.1:8080/api/v1/vehicles \
   -H "Authorization: Bearer $TOKEN"
 ```
+
+---
+
+## ☁️ Render Cloud Deployment
+
+The VMS backend is prepared for direct deployment on [Render](https://render.com) as a Web Service.
+
+### Deployment Settings
+* **Runtime:** `Java` (Java 21 via `system.properties`)
+* **Build Command:** `mvn clean package -DskipTests`
+* **Start Command:** `java -jar target/vms-backend-0.0.1-SNAPSHOT.jar`
+* **Health Check Path:** `/actuator/health` (publicly accessible without authentication)
+
+### Environment Variables
+Configure the following in the Render Dashboard (**Environment** tab):
+
+| Variable | Recommended Value | Description |
+| :--- | :--- | :--- |
+| `SPRING_PROFILES_ACTIVE` | `prod` | Activates production configuration |
+| `PORT` | *(assigned automatically by Render)* | Default is `8080` if not set |
+| `SERVER_ADDRESS` | `0.0.0.0` | Binds to all interfaces for Render reverse proxy |
+| `CORS_ALLOWED_ORIGINS` | `https://bespoke-mochi-006b8f.netlify.app,http://localhost:3000` | Whitelisted frontend origins |
+| `DB_URL` | `jdbc:postgresql://<host>:<port>/<database>` | Managed PostgreSQL connection string |
+| `DB_USERNAME` | `<database_user>` | Database user |
+| `DB_PASSWORD` | `<database_password>` | Database password |
+| `JPA_DDL_AUTO` | `update` | Auto-manages schema migrations on startup |

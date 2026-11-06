@@ -384,4 +384,26 @@ class VehicleSecurityIntegrationTest {
                 .andExpect(header().exists(HttpHeaders.ACCESS_CONTROL_ALLOW_METHODS))
                 .andExpect(header().exists(HttpHeaders.ACCESS_CONTROL_ALLOW_HEADERS));
     }
+
+    @Test
+    @DisplayName("CORS Preflight: OPTIONS /api/v1/vehicles from Netlify deployed Flutter Web should allow Authorization header")
+    void testCorsPreflight_NetlifyOrigin_AllowsAuthorizationHeader() throws Exception {
+        mockMvc.perform(options("/api/v1/vehicles")
+                        .header(HttpHeaders.ORIGIN, "https://bespoke-mochi-006b8f.netlify.app")
+                        .header(HttpHeaders.ACCESS_CONTROL_REQUEST_METHOD, "GET")
+                        .header(HttpHeaders.ACCESS_CONTROL_REQUEST_HEADERS, "Authorization,Content-Type"))
+                .andExpect(status().isOk())
+                .andExpect(header().string(HttpHeaders.ACCESS_CONTROL_ALLOW_ORIGIN, "https://bespoke-mochi-006b8f.netlify.app"))
+                .andExpect(header().exists(HttpHeaders.ACCESS_CONTROL_ALLOW_METHODS))
+                .andExpect(header().exists(HttpHeaders.ACCESS_CONTROL_ALLOW_HEADERS));
+    }
+
+    @Test
+    @DisplayName("Actuator: GET /actuator/health - Should be publicly accessible for Render health checks without authentication")
+    void testActuatorHealth_PubliclyAccessibleWithoutToken() throws Exception {
+        mockMvc.perform(get("/actuator/health")
+                        .accept(MediaType.APPLICATION_JSON))
+                .andExpect(status().isOk())
+                .andExpect(jsonPath("$.status").value("UP"));
+    }
 }

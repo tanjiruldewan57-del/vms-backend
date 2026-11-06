@@ -1,0 +1,27 @@
+services:
+  - type: web
+    name: vms-backend
+    runtime: java
+    plan: free
+    region: oregon
+    buildCommand: mvn clean package -DskipTests
+    startCommand: java -jar target/vms-backend-0.0.1-SNAPSHOT.jar
+    healthCheckPath: /actuator/health
+    envVars:
+      - key: SPRING_PROFILES_ACTIVE
+        value: prod
+      - key: PORT
+        value: 8080
+      - key: SERVER_ADDRESS
+        value: 0.0.0.0
+      - key: CORS_ALLOWED_ORIGINS
+        value: "http://127.0.0.1:3000,http://localhost:3000,http://127.0.0.1:8000,http://localhost:8000,https://bespoke-mochi-006b8f.netlify.app"
+      - key: DB_URL
+        sync: false
+      - key: DB_USERNAME
+        sync: false
+      - key: DB_PASSWORD
+        sync: false
+      - key: JPA_DDL_AUTO
+        value: update
+
